@@ -30,6 +30,11 @@ int getppid(void);
 int contar_caracteres(char *);
 int trace(int);
 int setpriority(int pid, int prio);
+int sem_open(int, int);
+int sem_wait(int);
+int sem_post(int);
+int sem_close(int);
+
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

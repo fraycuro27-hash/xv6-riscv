@@ -85,7 +85,10 @@ semwait(int id)
     }
     if(s->value > 0)
       break;
-    sleep(s, &s->lock);     // libera s->lock de forma atomica
+    sleep_prepare(s);       // registra el canal (con s->lock tomado)
+    release(&s->lock);
+    sleep();                // retorna sin dormir si ya hubo wakeup
+    acquire(&s->lock);
   }
   s->value--;
   release(&s->lock);

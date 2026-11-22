@@ -48,3 +48,7 @@ entry("contar_caracteres");
 entry("sysinfo");
 entry("trace");
 entry("setpriority");
+entry("sem_open");
+entry("sem_wait");
+entry("sem_post");
+entry("sem_close");

@@ -26,3 +26,7 @@
 #define SYS_sysinfo 25
 #define SYS_trace 26
 #define SYS_setpriority 27
+#define SYS_sem_open  28
+#define SYS_sem_wait  29
+#define SYS_sem_post  30
+#define SYS_sem_close 31

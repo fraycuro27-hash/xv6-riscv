@@ -160,3 +160,36 @@ sys_setpriority(void)
   argint(1, &prio);
   return setpriority(pid, prio);
 }
+
+uint64
+sys_sem_open(void)
+{
+  int id, valor;
+  argint(0, &id);
+  argint(1, &valor);
+  return semopen(id, valor);
+}
+
+uint64
+sys_sem_wait(void)
+{
+  int id;
+  argint(0, &id);
+  return semwait(id);
+}
+
+uint64
+sys_sem_post(void)
+{
+  int id;
+  argint(0, &id);
+  return sempost(id);
+}
+
+uint64
+sys_sem_close(void)
+{
+  int id;
+  argint(0, &id);
+  return semclose(id);
+}

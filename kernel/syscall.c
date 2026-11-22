@@ -101,6 +101,10 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_sem_open(void);
+extern uint64 sys_sem_wait(void);
+extern uint64 sys_sem_post(void);
+extern uint64 sys_sem_close(void);
 extern uint64 sys_sync(void);
 extern uint64 sys_getppid(void);
 extern uint64 sys_sysinfo(void);
@@ -131,6 +135,10 @@ static uint64 (*syscalls[])(void) = {
   [SYS_link]    = sys_link,
   [SYS_mkdir]   = sys_mkdir,
   [SYS_close]   = sys_close,
+[SYS_sem_open]  sys_sem_open,
+[SYS_sem_wait]  sys_sem_wait,
+[SYS_sem_post]  sys_sem_post,
+[SYS_sem_close] sys_sem_close,
   [SYS_sync]    = sys_sync,
   [SYS_getppid] sys_getppid,
   [SYS_sysinfo] sys_sysinfo,
