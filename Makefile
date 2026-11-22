@@ -135,6 +135,7 @@ UPROGS=\
 	$U/_t1_contador\
 	$U/_t2_prodcons\
 	$U/_t3_filosofos\
+	$U/_t4_lectores\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
