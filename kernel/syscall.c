@@ -6,7 +6,6 @@
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
-
 // Fetch the uint64 at addr from the current process.
 int
 fetchaddr(uint64 addr, uint64 *ip)
@@ -103,7 +102,10 @@ extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_sync(void);
-
+extern uint64 sys_getppid(void);
+extern uint64 sys_sysinfo(void);
+extern uint64 sys_trace(void);
+extern uint64 sys_setpriority(void);
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
@@ -130,9 +132,39 @@ static uint64 (*syscalls[])(void) = {
   [SYS_mkdir]   = sys_mkdir,
   [SYS_close]   = sys_close,
   [SYS_sync]    = sys_sync,
+  [SYS_getppid] sys_getppid,
+  [SYS_sysinfo] sys_sysinfo,
+  [SYS_trace] sys_trace,
+[SYS_setpriority] = sys_setpriority,
   // clang-format on
 };
-
+static char *syscall_names[] = {
+  [SYS_fork]              = "fork",
+  [SYS_exit]              = "exit",
+  [SYS_wait]              = "wait",
+  [SYS_pipe]              = "pipe",
+  [SYS_read]              = "read",
+  [SYS_kill]              = "kill",
+  [SYS_exec]              = "exec",
+  [SYS_fstat]             = "fstat",
+  [SYS_chdir]             = "chdir",
+  [SYS_dup]               = "dup",
+  [SYS_getpid]            = "getpid",
+  [SYS_sbrk]              = "sbrk",
+  [SYS_pause]             = "pause",
+  [SYS_uptime]            = "uptime",
+  [SYS_open]              = "open",
+  [SYS_write]             = "write",
+  [SYS_mknod]             = "mknod",
+  [SYS_unlink]            = "unlink",
+  [SYS_link]              = "link",
+  [SYS_mkdir]             = "mkdir",
+  [SYS_close]             = "close",
+  [SYS_contar_caracteres] = "contar_caracteres",
+  [SYS_getppid]           = "getppid",
+  [SYS_sysinfo]           = "sysinfo",
+  [SYS_trace]             = "trace",
+};
 void
 syscall(void)
 {
@@ -140,10 +172,13 @@ syscall(void)
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
-  if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    // Use num to lookup the system call function for num, call it,
-    // and store its return value in p->trapframe->a0
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     p->trapframe->a0 = syscalls[num]();
+
+    // Si el bit correspondiente a la syscall está activo en trace_mask, imprime
+    if((1 << num) & p->trace_mask) {
+      printk("%d: syscall %s -> %d\n", p->pid, syscall_names[num], (int)p->trapframe->a0);
+    }
   } else {
     printk("%d %s: unknown sys call %d\n", p->pid, p->name, num);
     p->trapframe->a0 = -1;

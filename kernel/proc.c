@@ -123,8 +123,10 @@ allocproc(void)
 
 found:
   p->pid = allocpid();
+  p->priority = PRIO_DEFAULT;   // Prioridad por defecto
+  p->eprio = PRIO_DEFAULT;
   p->state = USED;
-
+  p->trace_mask = 0;
   // Allocate a trapframe page.
   if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
     freeproc(p);
@@ -274,7 +276,9 @@ kfork(void)
     return -1;
   }
   np->sz = p->sz;
-
+  np->priority = p->priority;   // El hijo hereda la prioridad
+  np->eprio = p->priority;
+  np->trace_mask = p->trace_mask;
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
@@ -428,44 +432,52 @@ kwait(uint64 addr)
 void
 scheduler(void)
 {
-  struct proc *p;
+  struct proc *p, *best;
   struct cpu *c = mycpu();
+  int i, k;
+  int last = NPROC - 1;   // Ultimo proceso ejecutado por esta CPU
 
   c->proc = 0;
   for (;;) {
-    // The most recent process to run may have had interrupts
-    // turned off; enable them to avoid a deadlock if all
-    // processes are waiting. Then turn them back off
-    // to avoid a possible race between an interrupt
-    // and wfi.
+    // Igual que el original
     intr_on();
     intr_off();
 
-    int found = 0;
-    for (p = proc; p < &proc[NPROC]; p++) {
+    // 1. Buscar el RUNNABLE de mayor prioridad,
+    //    empezando despues de 'last'
+    best = 0;
+    for (k = 1; k <= NPROC; k++) {
+      i = (last + k) % NPROC;
+      p = &proc[i];
       acquire(&p->lock);
-      if (p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Don't re-enable interrupts on release.
-        mycpu()->intena = 0;
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-        found = 1;
+      if (p->state == RUNNABLE &&
+          (best == 0 || p->eprio > best->eprio)) {
+        best = p;
       }
       release(&p->lock);
     }
-    if (found == 0) {
-      // nothing to run; stop running on this core until an interrupt.
+
+    if (best == 0) {
+      // Nada que ejecutar: esperar una interrupcion
       asm volatile("wfi");
+      continue;
     }
+
+    // 2. Tomar el lock del elegido y verificar que siga listo
+    acquire(&best->lock);
+    if (best->state == RUNNABLE) {
+      best->state = RUNNING;
+      best->eprio = best->priority;   // Recupera su prioridad base
+      c->proc = best;
+      swtch(&c->context, &best->context);
+
+      // Don't re-enable interrupts on release.
+      mycpu()->intena = 0;
+
+      c->proc = 0;
+      last = best - proc;   // Posicion del ultimo ejecutado
+    }
+    release(&best->lock);
   }
 }
 
@@ -697,7 +709,61 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printk("%d %s %s", p->pid, state, p->name);
+    printk("%d %s %s prio=%d eprio=%d", p->pid, state, p->name, p->priority, p->eprio);
     printk("\n");
   }
 }
+uint64
+nproc(void)
+{
+  struct proc *p;
+  uint64 count = 0;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED) {
+      count++;
+    }
+    release(&p->lock);
+  }
+  return count;
+}
+
+// Asigna la prioridad prio al proceso pid.
+// Retorna 0 si tuvo exito, -1 si el pid no existe
+// o prio esta fuera de rango.
+int
+setpriority(int pid, int prio)
+{
+  struct proc *p;
+
+  if(prio < PRIO_MIN || prio > PRIO_MAX)
+    return -1;
+
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->pid == pid && p->state != UNUSED){
+      p->priority = prio;
+      p->eprio = prio;
+      release(&p->lock);
+      return 0;
+    }
+    release(&p->lock);
+  }
+  return -1;
+}
+
+// Envejecimiento: en cada tick, todo proceso RUNNABLE
+// (que esta esperando CPU) sube su prioridad efectiva.
+void
+aging(void)
+{
+  struct proc *p;
+
+  for(p = proc; p < &proc[NPROC]; p++){
+    acquire(&p->lock);
+    if(p->state == RUNNABLE)
+      p->eprio++;
+    release(&p->lock);
+  }
+}
+

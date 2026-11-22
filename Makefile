@@ -146,11 +146,30 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_test_prio_eq\
+	$U/_test_prio\
+	$U/_tiempo\
+	$U/_multi_sleep\
+	$U/_multi_fork5\
+	$U/_multi_fork\
+	$U/_exec_noexiste\
+	$U/_exec_args\
+	$U/_exec_lab04\
+	$U/_exec_ls\
+	$U/_fork_exec\
+	$U/_fork_exit3\
+	$U/_fork_exit2\
+	$U/_fork_exit1\
+	$U/_fork_exit\
+	$U/_proceso_demo\
 	$U/_logstress\
 	$U/_forphan\
 	$U/_dorphan\
 	$U/_sync\
-
+	$U/_test_getppid\
+	$U/_bench_syscall\
+	$U/_test_sysinfo\
+	$U/_test_trace
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
 

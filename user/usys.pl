@@ -43,3 +43,8 @@ entry("sbrk");
 entry("pause");
 entry("uptime");
 entry("sync");
+entry("getppid");
+entry("contar_caracteres");
+entry("sysinfo");
+entry("trace");
+entry("setpriority");

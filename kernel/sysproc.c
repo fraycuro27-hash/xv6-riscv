@@ -6,7 +6,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
-
+#include "sysinfo.h"
 uint64
 sys_exit(void)
 {
@@ -109,4 +109,54 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+uint64
+sys_getppid(void)
+{
+  struct proc *p = myproc();
+  int ppid;
+  acquire(&p->lock);
+  if(p->parent){
+    acquire(&p->parent->lock);
+    ppid = p->parent->pid;
+    release(&p->parent->lock);
+  } else {
+    ppid = 1;
+  }
+  release(&p->lock);
+  return ppid;
+}
+uint64
+sys_sysinfo(void)
+{
+  uint64 st;
+  struct sysinfo info;
+  struct proc *p = myproc();
+
+  argaddr(0, &st);
+
+  info.freemem = freemem();
+  info.nproc = nproc();
+
+  if(copyout(p->pagetable, p->sz, st, (char *)&info, sizeof(info)) < 0)
+    return -1;
+  return 0;
+}
+uint64
+sys_trace(void)
+{
+  int mask;
+  argint(0, &mask);
+  myproc()->trace_mask = mask;
+  return 0;
+}
+
+uint64
+sys_setpriority(void)
+{
+  int pid, prio;
+
+  argint(0, &pid);
+  argint(1, &prio);
+  return setpriority(pid, prio);
 }
