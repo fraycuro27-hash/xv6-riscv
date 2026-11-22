@@ -132,6 +132,9 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 
 UPROGS=\
 	$U/_t0_basico\
+	$U/_t1_contador\
+	$U/_t2_prodcons\
+	$U/_t3_filosofos\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
