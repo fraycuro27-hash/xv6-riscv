@@ -137,6 +137,7 @@ UPROGS=\
 	$U/_t3_filosofos\
 	$U/_t4_lectores\
 	$U/_t5_limites\
+	$U/_t6_kill\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
